@@ -16,42 +16,6 @@ exports.handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// Registration validation rules - Input Whitelisting with RegEx
-exports.validateRegistration = [
-    body('fullName')
-        .trim()
-        .notEmpty().withMessage('Full name is required')
-        .isLength({ min: 2, max: 100 }).withMessage('Full name must be between 2 and 100 characters')
-        .matches(/^[a-zA-Z\s'-]+$/).withMessage('Full name can only contain letters, spaces, hyphens, and apostrophes'),
-    
-    body('idNumber')
-        .trim()
-        .notEmpty().withMessage('ID number is required')
-        .matches(/^[0-9]{13}$/).withMessage('ID number must be exactly 13 digits')
-        .isNumeric().withMessage('ID number must contain only numbers'),
-    
-    body('accountNumber')
-        .trim()
-        .notEmpty().withMessage('Account number is required')
-        .matches(/^[0-9]{10,16}$/).withMessage('Account number must be between 10 and 16 digits')
-        .isNumeric().withMessage('Account number must contain only numbers'),
-    
-    body('username')
-        .trim()
-        .notEmpty().withMessage('Username is required')
-        .isLength({ min: 3, max: 30 }).withMessage('Username must be between 3 and 30 characters')
-        .matches(/^[a-z0-9_]+$/).withMessage('Username can only contain lowercase letters, numbers, and underscores')
-        .toLowerCase(),
-    
-    body('password')
-        .notEmpty().withMessage('Password is required')
-        .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-        .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-    
-    exports.handleValidationErrors
-];
-
 // Login validation rules
 exports.validateLogin = [
     body('username')

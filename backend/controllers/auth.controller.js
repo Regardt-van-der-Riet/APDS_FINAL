@@ -1,67 +1,6 @@
 const User = require('../models/User.model');
 const { signToken } = require('../middleware/auth.middleware');
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
-exports.register = async (req, res) => {
-    try {
-        const { fullName, idNumber, accountNumber, username, password } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({
-            $or: [
-                { username },
-                { idNumber },
-                { accountNumber }
-            ]
-        });
-
-        if (existingUser) {
-            let field = 'User';
-            if (existingUser.username === username) field = 'Username';
-            else if (existingUser.idNumber === idNumber) field = 'ID number';
-            else if (existingUser.accountNumber === accountNumber) field = 'Account number';
-
-            return res.status(400).json({
-                status: 'fail',
-                message: `${field} already exists`
-            });
-        }
-
-        // Create new user (password will be hashed automatically by the pre-save hook)
-        const user = await User.create({
-            fullName,
-            idNumber,
-            accountNumber,
-            username,
-            password
-        });
-
-        // Generate JWT token
-        const token = signToken(user._id);
-
-        res.status(201).json({
-            status: 'success',
-            message: 'User registered successfully',
-            token,
-            user: {
-                id: user._id,
-                fullName: user.fullName,
-                username: user.username,
-                accountNumber: user.accountNumber
-            }
-        });
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({
-            status: 'error',
-            message: 'Error registering user',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
-
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public

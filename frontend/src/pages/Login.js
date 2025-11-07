@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { validate } from '../utils/validation';
 
@@ -146,10 +146,6 @@ const Login = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-        <p className="text-center" style={{ marginTop: '1.5rem' }}>
-          Don't have an account? <Link to="/register" className="link">Register here</Link>
-        </p>
       </div>
     </div>
   );
