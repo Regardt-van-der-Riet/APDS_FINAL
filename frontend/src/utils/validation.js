@@ -69,7 +69,7 @@ export const validate = {
     if (!patterns.amount.test(value)) {
       return 'Amount must be a valid number with up to 2 decimal places';
     }
-    const numValue = parseFloat(value);
+    const numValue = Number.parseFloat(value);
     if (numValue < 0.01 || numValue > 1000000) {
       return 'Amount must be between 0.01 and 1,000,000';
     }

@@ -9,8 +9,16 @@ exports.adminLogin = async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // Find admin by username
-        const admin = await Admin.findOne({ username }).select('+password');
+        // Validate username format to prevent NoSQL injection
+        if (!username || typeof username !== 'string' || !/^[a-z0-9_]+$/i.test(username)) {
+            return res.status(401).json({
+                status: 'fail',
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Find admin by username (sanitized)
+        const admin = await Admin.findOne({ username: username.toLowerCase() }).select('+password');
 
         if (!admin) {
             return res.status(401).json({
@@ -97,16 +105,41 @@ exports.getAllPayments = async (req, res) => {
         
         let query = {};
         
-        // Filter by status
+        // Validate and filter by status (prevent NoSQL injection)
+        const allowedStatuses = ['pending', 'verified', 'processed', 'completed', 'failed', 'cancelled'];
         if (status && status !== 'all') {
+            if (!allowedStatuses.includes(status)) {
+                return res.status(400).json({
+                    status: 'fail',
+                    message: 'Invalid status value'
+                });
+            }
             query.status = status;
         }
         
-        // Filter by date range
+        // Validate and filter by date range (prevent NoSQL injection)
         if (startDate || endDate) {
             query.createdAt = {};
-            if (startDate) query.createdAt.$gte = new Date(startDate);
-            if (endDate) query.createdAt.$lte = new Date(endDate);
+            if (startDate) {
+                const start = new Date(startDate);
+                if (isNaN(start.getTime())) {
+                    return res.status(400).json({
+                        status: 'fail',
+                        message: 'Invalid start date'
+                    });
+                }
+                query.createdAt.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                if (isNaN(end.getTime())) {
+                    return res.status(400).json({
+                        status: 'fail',
+                        message: 'Invalid end date'
+                    });
+                }
+                query.createdAt.$lte = end;
+            }
         }
 
         const payments = await Payment.find(query)
@@ -194,7 +227,7 @@ exports.rejectPayment = async (req, res) => {
         payment.processedAt = Date.now();
         if (reason) {
             // Clean the reason to only include allowed characters
-            const cleanReason = reason.replace(/[^a-zA-Z0-9\s.,!?'-]/g, '');
+            const cleanReason = reason.replaceAll(/[^a-zA-Z0-9\s.,!?'-]/g, '');
             payment.notes = payment.notes 
                 ? `${payment.notes}. Rejected - ${cleanReason}` 
                 : `Rejected - ${cleanReason}`;

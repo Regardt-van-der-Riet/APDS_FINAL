@@ -7,15 +7,33 @@ exports.createPayment = async (req, res) => {
     try {
         const { amount, currency, provider, payeeAccountNumber, payeeName, swiftCode, notes } = req.body;
 
+        // Validate enum values to prevent NoSQL injection
+        const allowedCurrencies = ['USD', 'EUR', 'GBP', 'ZAR', 'JPY', 'AUD', 'CAD', 'CHF'];
+        const allowedProviders = ['SWIFT', 'SEPA', 'ACH', 'WIRE'];
+
+        if (!allowedCurrencies.includes(currency)) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid currency'
+            });
+        }
+
+        if (!allowedProviders.includes(provider)) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid provider'
+            });
+        }
+
         // Create payment with logged-in user's ID
         const payment = await Payment.create({
             userId: req.user._id,
             amount,
             currency,
             provider,
-            payeeAccountNumber,
+            payeeAccountNumber: payeeAccountNumber.toUpperCase(),
             payeeName,
-            swiftCode,
+            swiftCode: swiftCode.toUpperCase(),
             notes,
             status: 'pending'
         });

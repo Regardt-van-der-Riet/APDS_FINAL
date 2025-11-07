@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const paymentSchema = new mongoose.Schema({
     userId: {
@@ -72,7 +73,8 @@ const paymentSchema = new mongoose.Schema({
 paymentSchema.pre('save', function(next) {
     if (!this.transactionReference) {
         const timestamp = Date.now();
-        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        // Use crypto.randomInt for cryptographically secure random numbers
+        const random = crypto.randomInt(0, 10000).toString().padStart(4, '0');
         this.transactionReference = `TXN${timestamp}${random}`;
     }
     next();

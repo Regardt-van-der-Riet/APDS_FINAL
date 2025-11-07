@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
@@ -13,20 +13,13 @@ const AdminDashboard = () => {
   const [success, setSuccess] = useState('');
   const [expandedPayment, setExpandedPayment] = useState(null);
 
-  useEffect(() => {
-    const adminData = localStorage.getItem('admin');
-    const token = localStorage.getItem('adminToken');
-    
-    if (!adminData || !token) {
-      navigate('/login');
-      return;
-    }
-    
-    setAdmin(JSON.parse(adminData));
-    fetchData();
-  }, [filter, navigate]);
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('admin');
+    navigate('/login');
+  }, [navigate]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
@@ -53,7 +46,20 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, handleLogout]);
+
+  useEffect(() => {
+    const adminData = localStorage.getItem('admin');
+    const token = localStorage.getItem('adminToken');
+    
+    if (!adminData || !token) {
+      navigate('/login');
+      return;
+    }
+    
+    setAdmin(JSON.parse(adminData));
+    fetchData();
+  }, [filter, navigate, fetchData]);
 
   const handleVerify = async (paymentId) => {
     if (!window.confirm('Are you sure you want to verify this payment?')) return;
@@ -94,12 +100,6 @@ const AdminDashboard = () => {
       setError('Failed to reject payment');
       console.error('Error:', err);
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('admin');
-    navigate('/login');
   };
 
   const formatDate = (date) => {
@@ -320,6 +320,9 @@ const AdminDashboard = () => {
               {payments.map((payment) => (
                 <div 
                   key={payment._id}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expandedPayment === payment._id}
                   style={{
                     border: '2px solid #e0e0e0',
                     borderRadius: '12px',
@@ -329,6 +332,12 @@ const AdminDashboard = () => {
                     background: expandedPayment === payment._id ? '#f7fafc' : 'white'
                   }}
                   onClick={() => setExpandedPayment(expandedPayment === payment._id ? null : payment._id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setExpandedPayment(expandedPayment === payment._id ? null : payment._id);
+                    }
+                  }}
                   onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
                   onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                 >

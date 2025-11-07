@@ -8,8 +8,26 @@ exports.login = async (req, res) => {
     try {
         const { username, accountNumber, password } = req.body;
 
+        // Validate inputs to prevent NoSQL injection
+        if (!username || typeof username !== 'string' || !/^[a-z0-9_]+$/.test(username)) {
+            return res.status(401).json({
+                status: 'fail',
+                message: 'Invalid credentials'
+            });
+        }
+
+        if (!accountNumber || typeof accountNumber !== 'string' || !/^[0-9]{10,16}$/.test(accountNumber)) {
+            return res.status(401).json({
+                status: 'fail',
+                message: 'Invalid credentials'
+            });
+        }
+
         // Find user by username and account number (must match both)
-        const user = await User.findOne({ username, accountNumber }).select('+password');
+        const user = await User.findOne({ 
+            username: username.toLowerCase(), 
+            accountNumber: accountNumber 
+        }).select('+password');
 
         if (!user) {
             return res.status(401).json({

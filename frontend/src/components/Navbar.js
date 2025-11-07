@@ -8,19 +8,15 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminData, setAdminData] = useState(null);
 
   // Check for admin authentication
   useEffect(() => {
     const adminToken = localStorage.getItem('adminToken');
-    const admin = localStorage.getItem('admin');
     
-    if (adminToken && admin) {
+    if (adminToken) {
       setIsAdmin(true);
-      setAdminData(JSON.parse(admin));
     } else {
       setIsAdmin(false);
-      setAdminData(null);
     }
   }, [location]); // Re-check when location changes
 
@@ -33,7 +29,6 @@ const Navbar = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('admin');
     setIsAdmin(false);
-    setAdminData(null);
     navigate('/login');
   };
 
