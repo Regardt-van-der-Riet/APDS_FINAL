@@ -337,6 +337,22 @@ MongoDB Compass is a graphical user interface for MongoDB that makes it easier t
 
 After installing all required software, follow these steps to set up the project on your local machine.
 
+### CRITICAL SETUP CHECKLIST
+
+Before you can run and use the application, you MUST complete ALL of the following steps in order:
+
+1. Clone the repository from GitHub
+2. Install all project dependencies (npm packages)
+3. Generate SSL certificates for HTTPS
+4. Create the `.env` configuration file with database connection settings
+5. Verify MongoDB is running
+6. Run the admin creation script (creates admin account with username: admin, password: Admin@123)
+7. Run the user creation script (creates customer account with username: johnsmith, password: Password@123)
+8. Start the backend and frontend servers
+9. Open your browser and log in using the credentials from steps 6 and 7
+
+Steps 6 and 7 are REQUIRED. Without these accounts, you will not be able to log in or use any features of the application.
+
 ### Step 1: Clone the Repository from GitHub
 
 Cloning means downloading a complete copy of the project code to your computer.
@@ -466,11 +482,13 @@ SSL_CERT_PATH=./ssl/server.cert
 - `SSL_KEY_PATH`: Location of the SSL private key file
 - `SSL_CERT_PATH`: Location of the SSL certificate file
 
-### Step 5: Initialize the Database
+### Step 5: Initialize the Database and Create Users
 
-Before running the application, you should ensure MongoDB is running and optionally create an admin user.
+This is a CRITICAL step. Before you can use the application, you MUST populate the database with at least one admin account and one customer account. Without these accounts, you will not be able to log in to the application.
 
 #### Verifying MongoDB is Running
+
+Before creating users, ensure that MongoDB is running on your system.
 
 1. Open a new command prompt or terminal window
 2. Check if MongoDB is running:
@@ -479,15 +497,21 @@ Before running the application, you should ensure MongoDB is running and optiona
    - On Linux: Run `sudo systemctl status mongod`
 
 3. If MongoDB is not running, start it:
-   - On Windows: MongoDB usually starts automatically as a service
+   - On Windows: MongoDB usually starts automatically as a service. If not, search for "Services" in the Start menu, find "MongoDB", right-click it, and select "Start"
    - On macOS: Run `brew services start mongodb-community`
    - On Linux: Run `sudo systemctl start mongod`
 
-#### Creating an Admin User (Optional)
+4. Verify MongoDB is accepting connections:
+   - Open a command prompt or terminal
+   - Type `mongosh` (or `mongo` on older versions) and press Enter
+   - If you see a MongoDB shell prompt, MongoDB is running correctly
+   - Type `exit` to close the MongoDB shell
 
-The application includes a script to create an administrative user account.
+#### Creating an Admin User (REQUIRED)
 
-1. Navigate to the backend directory if not already there:
+The application includes an automated script that creates an administrative user account with pre-configured credentials. You MUST run this script to create an admin account that can access the admin dashboard.
+
+1. Ensure you are in the backend directory. If you are in the root project directory, navigate to backend:
    ```
    cd backend
    ```
@@ -497,29 +521,170 @@ The application includes a script to create an administrative user account.
    node scripts/createAdmin.js
    ```
 
-3. Follow the prompts to enter admin details:
-   - Full Name: Enter the administrator's name
-   - Username: Enter a username for the admin account
-   - Password: Enter a secure password
-   - Confirm Password: Re-enter the password
+3. The script will automatically create an admin user with the following credentials:
+   - Username: `admin`
+   - Password: `Admin@123`
+   - Email: `admin@apdsbanking.com`
+   - Role: `super_admin`
 
-4. If successful, you will see a confirmation message
+4. After running the script, you should see output similar to this:
+   ```
+   MongoDB connected successfully
+   Admin user created successfully!
+   Username: admin
+   Password: Admin@123
+   Email: admin@apdsbanking.com
+   Role: super_admin
+   IMPORTANT: Change the password after first login!
+   ```
 
-#### Creating a Test User (Optional)
+5. IMPORTANT NOTES:
+   - If you see "Admin user already exists", this means the admin account has already been created and you can skip this step
+   - Write down or save these credentials in a secure location as you will need them to log in
+   - The password `Admin@123` is a default password for testing purposes
+   - In a production environment, you should change this password immediately after first login
 
-You can also create a test customer user account:
+#### Creating a Customer User (REQUIRED)
 
-1. Run the test user creation script:
+The application also includes a script to create a test customer user account. You MUST run this script to create at least one customer account for testing the payment functionality.
+
+1. Ensure you are still in the backend directory:
+   ```
+   cd backend
+   ```
+   (Skip this if you are already in the backend directory from the previous step)
+
+2. Run the test user creation script:
    ```
    node scripts/createTestUser.js
    ```
 
-2. Follow the prompts to enter user details:
-   - Full Name
-   - ID Number (13 digits)
-   - Account Number (10-16 digits)
-   - Username
-   - Password
+3. The script will automatically create a customer user with the following credentials:
+   - Full Name: `John Smith`
+   - Username: `johnsmith`
+   - Password: `Password@123`
+   - ID Number: `8905125432109`
+   - Account Number: `9876543210123`
+
+4. After running the script, you should see output similar to this:
+   ```
+   MongoDB connected successfully
+   Test user created successfully!
+   Username: johnsmith
+   Password: Password@123
+   Account Number: 9876543210123
+   ```
+
+5. IMPORTANT NOTES:
+   - If you see "User johnsmith already exists", the script will automatically delete and recreate the user with the default credentials
+   - Write down or save these credentials as you will need them to log in as a customer
+   - The password `Password@123` is for testing purposes only
+
+#### Understanding the Two User Types
+
+The application has two distinct user types with different access levels:
+
+1. ADMIN USER
+   - Can access the admin dashboard at the `/admin` route
+   - Can view all pending payments from all customers
+   - Can verify and approve payment transactions
+   - Can view all registered customer accounts
+   - Cannot create payment transactions
+
+2. CUSTOMER USER
+   - Can access the customer dashboard at the `/dashboard` route
+   - Can create new international payment transactions
+   - Can view their own payment history
+   - Can see the status of their submitted payments
+   - Cannot access admin functions
+
+#### Verification That Users Were Created Successfully
+
+To verify that the users were created successfully in the database:
+
+Method 1: Using MongoDB Compass (GUI)
+1. Open MongoDB Compass
+2. Connect to `mongodb://localhost:27017`
+3. Click on the `apds_payments` database in the left sidebar
+4. You should see collections named `admins` and `users`
+5. Click on the `admins` collection - you should see one document with username "admin"
+6. Click on the `users` collection - you should see one document with username "johnsmith"
+
+Method 2: Using MongoDB Shell (Command Line)
+1. Open a command prompt or terminal
+2. Type `mongosh` (or `mongo` on older versions) and press Enter
+3. Type `use apds_payments` and press Enter
+4. Type `db.admins.find()` and press Enter - you should see the admin user document
+5. Type `db.users.find()` and press Enter - you should see the customer user document
+6. Type `exit` to close the MongoDB shell
+
+#### What to Do If Script Execution Fails
+
+If you encounter errors when running the scripts, try the following troubleshooting steps:
+
+1. Verify MongoDB is running (see "Verifying MongoDB is Running" above)
+
+2. Check your `.env` file in the backend directory to ensure `MONGODB_URI` is correctly set:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/apds_payments
+   ```
+
+3. Ensure you installed all backend dependencies:
+   ```
+   cd backend
+   npm install
+   ```
+
+4. Check for error messages:
+   - "MongoDB connection error" - MongoDB is not running or connection string is incorrect
+   - "Module not found" - Dependencies are not installed
+   - "Cannot find module" - You are not in the correct directory
+
+5. If problems persist, manually check MongoDB:
+   ```
+   mongosh
+   show dbs
+   use apds_payments
+   show collections
+   exit
+   ```
+
+#### Creating Additional Test Users (Optional)
+
+If you want to create additional test users with different credentials, you can modify the `createTestUser.js` script:
+
+1. Navigate to `backend/scripts/createTestUser.js`
+2. Edit the script with different values:
+   - Change `fullName` to a different name
+   - Change `idNumber` to a different 13-digit number
+   - Change `accountNumber` to a different 10-16 digit number
+   - Change `username` to a different username
+   - Change `password` to a different password
+3. Save the file and run `node scripts/createTestUser.js` again
+
+Remember: Each username, ID number, and account number must be unique in the database.
+
+#### Quick Reference: Default Login Credentials
+
+After running both scripts, you will have the following accounts ready to use:
+
+ADMIN ACCOUNT
+```
+Username: admin
+Password: Admin@123
+Access: Admin Dashboard
+URL: https://localhost:3000/admin
+```
+
+CUSTOMER ACCOUNT
+```
+Username: johnsmith
+Password: Password@123
+Access: Customer Dashboard
+URL: https://localhost:3000/dashboard
+```
+
+IMPORTANT: Save these credentials as you will need them to log in and test the application.
 
 ### Step 6: Running the Application
 
@@ -566,6 +731,54 @@ If you prefer to run the services in separate terminal windows:
    - On Safari: Click "Show Details" then "visit this website"
 
 5. You should now see the application login/registration page
+
+#### Logging In to the Application
+
+Now that the application is running, you need to log in using the accounts you created in Step 5.
+
+LOGGING IN AS A CUSTOMER USER:
+
+1. On the login page at https://localhost:3000, enter the following credentials:
+   - Username: `johnsmith`
+   - Password: `Password@123`
+
+2. Click the "Login" button
+
+3. After successful login, you will be redirected to the customer dashboard at https://localhost:3000/dashboard
+
+4. From the dashboard, you can:
+   - Create new international payment transactions
+   - View your payment history
+   - See the status of submitted payments
+
+LOGGING IN AS AN ADMIN USER:
+
+1. If you are currently logged in as a customer, click "Logout" in the navigation bar
+
+2. On the login page at https://localhost:3000, enter the following credentials:
+   - Username: `admin`
+   - Password: `Admin@123`
+
+3. Click the "Login" button
+
+4. After successful login, you will be redirected to the admin dashboard at https://localhost:3000/admin
+
+5. From the admin dashboard, you can:
+   - View all pending payment transactions from all customers
+   - Verify and approve payments
+   - View all registered customer accounts
+   - Monitor system activity
+
+IMPORTANT NOTES ABOUT LOGGING IN:
+
+1. The username and password are case-sensitive. Make sure you type them exactly as shown
+2. If you see "Invalid credentials" error, double-check that:
+   - You ran both the createAdmin.js and createTestUser.js scripts successfully
+   - MongoDB is running
+   - You typed the username and password correctly
+3. Each user type (customer vs admin) has access to different features
+4. You cannot access admin features when logged in as a customer, and vice versa
+5. The authentication token expires after 7 days, after which you will need to log in again
 
 #### Stopping the Application
 
