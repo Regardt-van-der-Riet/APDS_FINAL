@@ -23,10 +23,14 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Find user by username and account number (must match both)
+        // Sanitize inputs - store in validated variables
+        const sanitizedUsername = username.toLowerCase();
+        const sanitizedAccountNumber = accountNumber;
+
+        // Find user by username and account number (using sanitized values)
         const user = await User.findOne({ 
-            username: username.toLowerCase(), 
-            accountNumber: accountNumber 
+            username: sanitizedUsername, 
+            accountNumber: sanitizedAccountNumber 
         }).select('+password');
 
         if (!user) {

@@ -7,7 +7,7 @@ exports.createPayment = async (req, res) => {
     try {
         const { amount, currency, provider, payeeAccountNumber, payeeName, swiftCode, notes } = req.body;
 
-        // Validate enum values to prevent NoSQL injection
+        // Validate and sanitize enum values to prevent NoSQL injection
         const allowedCurrencies = ['USD', 'EUR', 'GBP', 'ZAR', 'JPY', 'AUD', 'CAD', 'CHF'];
         const allowedProviders = ['SWIFT', 'SEPA', 'ACH', 'WIRE'];
 
@@ -25,15 +25,21 @@ exports.createPayment = async (req, res) => {
             });
         }
 
-        // Create payment with logged-in user's ID
+        // Store validated values
+        const validatedCurrency = currency;
+        const validatedProvider = provider;
+        const sanitizedPayeeAccount = payeeAccountNumber.toUpperCase();
+        const sanitizedSwiftCode = swiftCode.toUpperCase();
+
+        // Create payment with validated/sanitized values only
         const payment = await Payment.create({
             userId: req.user._id,
             amount,
-            currency,
-            provider,
-            payeeAccountNumber: payeeAccountNumber.toUpperCase(),
+            currency: validatedCurrency,
+            provider: validatedProvider,
+            payeeAccountNumber: sanitizedPayeeAccount,
             payeeName,
-            swiftCode: swiftCode.toUpperCase(),
+            swiftCode: sanitizedSwiftCode,
             notes,
             status: 'pending'
         });

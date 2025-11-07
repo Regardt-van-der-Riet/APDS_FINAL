@@ -96,6 +96,22 @@ exports.getPendingPayments = async (req, res) => {
     }
 };
 
+// Helper function to validate status
+const validateStatus = (status) => {
+    const allowedStatuses = ['pending', 'verified', 'processed', 'completed', 'failed', 'cancelled'];
+    if (status && status !== 'all') {
+        return allowedStatuses.includes(status) ? status : null;
+    }
+    return null;
+};
+
+// Helper function to validate date
+const validateDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? false : date;
+};
+
 // @desc    Get all payments (with filters)
 // @route   GET /api/admin/payments
 // @access  Private (Admin)
@@ -103,43 +119,40 @@ exports.getAllPayments = async (req, res) => {
     try {
         const { status, startDate, endDate } = req.query;
         
-        let query = {};
-        
-        // Validate and filter by status (prevent NoSQL injection)
-        const allowedStatuses = ['pending', 'verified', 'processed', 'completed', 'failed', 'cancelled'];
-        if (status && status !== 'all') {
-            if (!allowedStatuses.includes(status)) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'Invalid status value'
-                });
-            }
-            query.status = status;
+        // Validate status
+        const validatedStatus = validateStatus(status);
+        if (status && status !== 'all' && !validatedStatus) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid status value'
+            });
         }
         
-        // Validate and filter by date range (prevent NoSQL injection)
-        if (startDate || endDate) {
+        // Validate dates
+        const validatedStartDate = validateDate(startDate);
+        const validatedEndDate = validateDate(endDate);
+        
+        if (startDate && validatedStartDate === false) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid start date'
+            });
+        }
+        
+        if (endDate && validatedEndDate === false) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid end date'
+            });
+        }
+
+        // Construct query with validated values
+        const query = {};
+        if (validatedStatus) query.status = validatedStatus;
+        if (validatedStartDate || validatedEndDate) {
             query.createdAt = {};
-            if (startDate) {
-                const start = new Date(startDate);
-                if (isNaN(start.getTime())) {
-                    return res.status(400).json({
-                        status: 'fail',
-                        message: 'Invalid start date'
-                    });
-                }
-                query.createdAt.$gte = start;
-            }
-            if (endDate) {
-                const end = new Date(endDate);
-                if (isNaN(end.getTime())) {
-                    return res.status(400).json({
-                        status: 'fail',
-                        message: 'Invalid end date'
-                    });
-                }
-                query.createdAt.$lte = end;
-            }
+            if (validatedStartDate) query.createdAt.$gte = validatedStartDate;
+            if (validatedEndDate) query.createdAt.$lte = validatedEndDate;
         }
 
         const payments = await Payment.find(query)
