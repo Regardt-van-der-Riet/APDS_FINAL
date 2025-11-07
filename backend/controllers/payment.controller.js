@@ -7,7 +7,7 @@ exports.createPayment = async (req, res) => {
     try {
         const { amount, currency, provider, payeeAccountNumber, payeeName, swiftCode, notes } = req.body;
 
-        // Validate and sanitize enum values to prevent NoSQL injection
+        // Validate enum values to prevent NoSQL injection
         const allowedCurrencies = ['USD', 'EUR', 'GBP', 'ZAR', 'JPY', 'AUD', 'CAD', 'CHF'];
         const allowedProviders = ['SWIFT', 'SEPA', 'ACH', 'WIRE'];
 
@@ -25,24 +25,28 @@ exports.createPayment = async (req, res) => {
             });
         }
 
-        // Store validated values
-        const validatedCurrency = currency;
-        const validatedProvider = provider;
-        const sanitizedPayeeAccount = payeeAccountNumber.toUpperCase();
-        const sanitizedSwiftCode = swiftCode.toUpperCase();
+        // Sanitize all input values explicitly
+        const validatedCurrency = String(currency);
+        const validatedProvider = String(provider);
+        const sanitizedPayeeAccount = String(payeeAccountNumber).toUpperCase();
+        const sanitizedPayeeName = String(payeeName);
+        const sanitizedSwiftCode = String(swiftCode).toUpperCase();
+        const sanitizedNotes = notes ? String(notes) : '';
 
-        // Create payment with validated/sanitized values only
-        const payment = await Payment.create({
-            userId: req.user._id,
-            amount,
-            currency: validatedCurrency,
-            provider: validatedProvider,
-            payeeAccountNumber: sanitizedPayeeAccount,
-            payeeName,
-            swiftCode: sanitizedSwiftCode,
-            notes,
-            status: 'pending'
-        });
+        // Create new payment object with sanitized values
+        const payment = new Payment();
+        payment.userId = req.user._id;
+        payment.amount = amount;
+        payment.currency = validatedCurrency;
+        payment.provider = validatedProvider;
+        payment.payeeAccountNumber = sanitizedPayeeAccount;
+        payment.payeeName = sanitizedPayeeName;
+        payment.swiftCode = sanitizedSwiftCode;
+        payment.notes = sanitizedNotes;
+        payment.status = 'pending';
+        
+        // Save to database
+        await payment.save();
 
         // Populate user information
         await payment.populate('userId', 'fullName username accountNumber');

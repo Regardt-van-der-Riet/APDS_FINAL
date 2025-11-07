@@ -24,14 +24,14 @@ exports.login = async (req, res) => {
         }
 
         // Sanitize inputs - store in validated variables
-        const sanitizedUsername = username.toLowerCase();
-        const sanitizedAccountNumber = accountNumber;
+        const sanitizedUsername = String(username).toLowerCase();
+        const sanitizedAccountNumber = String(accountNumber);
 
-        // Find user by username and account number (using sanitized values)
-        const user = await User.findOne({ 
-            username: sanitizedUsername, 
-            accountNumber: sanitizedAccountNumber 
-        }).select('+password');
+        // Find user using Mongoose query builder (not direct object construction)
+        const user = await User.findOne()
+            .where('username').equals(sanitizedUsername)
+            .where('accountNumber').equals(sanitizedAccountNumber)
+            .select('+password');
 
         if (!user) {
             return res.status(401).json({

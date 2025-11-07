@@ -17,8 +17,13 @@ exports.adminLogin = async (req, res) => {
             });
         }
 
-        // Find admin by username (sanitized)
-        const admin = await Admin.findOne({ username: username.toLowerCase() }).select('+password');
+        // Sanitize username
+        const sanitizedUsername = String(username).toLowerCase();
+
+        // Find admin using Mongoose query builder (not direct object construction)
+        const admin = await Admin.findOne()
+            .where('username').equals(sanitizedUsername)
+            .select('+password');
 
         if (!admin) {
             return res.status(401).json({
@@ -109,7 +114,7 @@ const validateStatus = (status) => {
 const validateDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? false : date;
+    return Number.isNaN(date.getTime()) ? false : date;
 };
 
 // @desc    Get all payments (with filters)
@@ -146,16 +151,24 @@ exports.getAllPayments = async (req, res) => {
             });
         }
 
-        // Construct query with validated values
-        const query = {};
-        if (validatedStatus) query.status = validatedStatus;
-        if (validatedStartDate || validatedEndDate) {
-            query.createdAt = {};
-            if (validatedStartDate) query.createdAt.$gte = validatedStartDate;
-            if (validatedEndDate) query.createdAt.$lte = validatedEndDate;
+        // Build query using Mongoose query builder pattern (safer than object construction)
+        let queryBuilder = Payment.find();
+        
+        // Apply status filter if validated
+        if (validatedStatus) {
+            queryBuilder = queryBuilder.where('status').equals(validatedStatus);
         }
-
-        const payments = await Payment.find(query)
+        
+        // Apply date range filters if validated
+        if (validatedStartDate) {
+            queryBuilder = queryBuilder.where('createdAt').gte(validatedStartDate);
+        }
+        if (validatedEndDate) {
+            queryBuilder = queryBuilder.where('createdAt').lte(validatedEndDate);
+        }
+        
+        // Execute query
+        const payments = await queryBuilder
             .sort({ createdAt: -1 })
             .populate('userId', 'fullName username accountNumber');
 
