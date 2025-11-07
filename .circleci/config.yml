@@ -31,7 +31,7 @@ jobs:
       - checkout
       - run:
           name: Install npm-audit
-          command: npm install -g npm-audit-resolver
+          command: sudo npm install -g npm-audit-resolver
       - install-dependencies:
           directory: "backend"
       - run:
