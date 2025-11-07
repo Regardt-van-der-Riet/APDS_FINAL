@@ -56,13 +56,14 @@ app.use(mongoSanitize());
 // 5. Prevent parameter pollution
 app.use(hpp());
 
-// 6. Rate limiting - Protection against DDoS and brute force
+// 6. Rate limiting - Protection against DDoS and brute force (skip in test environment)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === 'test'
 });
 app.use('/api/', limiter);
 
@@ -71,7 +72,8 @@ const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // Limit each IP to 5 login requests per windowMs
     message: 'Too many login attempts, please try again after 15 minutes.',
-    skipSuccessfulRequests: true
+    skipSuccessfulRequests: true,
+    skip: () => process.env.NODE_ENV === 'test'
 });
 
 // ========================

@@ -117,6 +117,10 @@ const validateDate = (dateString) => {
     return Number.isNaN(date.getTime()) ? false : date;
 };
 
+// Export helpers for testing
+exports.validateStatus = validateStatus;
+exports.validateDate = validateDate;
+
 // @desc    Get all payments (with filters)
 // @route   GET /api/admin/payments
 // @access  Private (Admin)

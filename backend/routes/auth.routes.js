@@ -24,7 +24,11 @@ const bruteforce = new ExpressBrute(store, {
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', bruteforce.prevent, validateLogin, authController.login);
+// Skip brute force in test environment
+const loginMiddleware = process.env.NODE_ENV === 'test' 
+    ? [validateLogin, authController.login]
+    : [bruteforce.prevent, validateLogin, authController.login];
+router.post('/login', ...loginMiddleware);
 
 // @route   GET /api/auth/me
 // @desc    Get current user
