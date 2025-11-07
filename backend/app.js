@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 // Route imports
 const authRoutes = require('./routes/auth.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', authLimiter, adminRoutes);
 
 // 404 Handler
 app.all('*', (req, res) => {
